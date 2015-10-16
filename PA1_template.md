@@ -71,7 +71,7 @@ names(interval)
 ## [1] "835"
 ```
 
-## Imputing missing values
+## Inputting missing values
 
 
 ```r
