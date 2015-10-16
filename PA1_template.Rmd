@@ -7,7 +7,7 @@ output:
 
 ## Loading and preprocessing the data
 
-```{r initial_code, warning=FALSE, message=FALSE}
+```{r initial_code, warning=FALSE, message=FALSE, echo=TRUE}
 library(data.table)
 library(dplyr)
 library(ggplot2)
@@ -21,7 +21,7 @@ dt$date <- as.Date(dt$date, "%Y-%m-%d")
 
 ## What is mean total number of steps taken per day?
 
-```{r total_steps_per_day}
+```{r total_steps_per_day, echo=TRUE}
 dt %>% select(date, steps) %>%
     group_by(date) %>%
     summarise(nsteps = sum(steps, na.rm=FALSE)) %>%
@@ -40,7 +40,7 @@ median(steps$nsteps)
 
 ## What is the average daily activity pattern?
 
-```{r avg_daily_activity}
+```{r avg_daily_activity, echo=TRUE}
 ts <- tapply(dt$steps, dt$interval, mean, na.rm = TRUE)
 plot(row.names(ts), ts, type = "l",
      xlab = "5-minute interval", ylab = "Average across all Days",
@@ -51,10 +51,52 @@ interval <- which.max(ts)
 names(interval)
 ```
 
-
-
 ## Imputing missing values
 
+```{r Missing_Values, echo=TRUE}
+
+dt %>%
+    na.omit() %>%
+    group_by(date) %>%
+    summarise(mean.steps = mean(steps)) -> steps.mean
+
+dt %>% left_join(steps.mean) -> dt.filled
+# Drop the dates that have *NO* steps with data
+dt.filled <- dt.filled[complete.cases(dt.filled$mean.steps)]
+# Update records having steps = NA to mean.steps for the date
+dt.filled$steps[is.na(dt.filled$steps)] <- dt.filled$mean.steps[is.na(dt.filled$steps)]
+dt.filled %>% select(date, steps, interval) -> dt.filled
+
+dt.filled %>% select(date, steps) %>%
+    group_by(date) %>%
+    summarise(nsteps = sum(steps, na.rm=FALSE)) %>%
+    filter(!is.na(nsteps)) -> steps
+
+rng = range(steps$nsteps)
+ggplot(data=steps, aes(steps$nsteps)) +
+    geom_histogram(breaks=seq(rng[1], rng[2], by=2000), fill="Brown") +
+    xlab("Steps Per Day") +
+    ylab("Total") +
+    ggtitle("Total Steps Taken Per Day")
+
+mean(steps$nsteps)
+median(steps$nsteps)
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r activity_patterns, echo=TRUE}
+dt.filled %>% mutate(dow = weekdays(date)) %>%
+    mutate(dow = ifelse((dow %in% c("Sunday","Saturday")), "weekend", "weekday")) %>%
+    select(steps, date, interval, dow) -> dt.days
+
+dt.days$dow <- as.factor(dt.days$dow)
+
+dt.steps <- aggregate(dt.days$steps, by = list(dt.days$interval, dt.days$dow), mean)
+names(dt.steps) <- c("interval", "dow_type", "steps")
+
+xyplot(steps ~ interval | dow_type, dt.steps, type = "l", layout = c(1, 2),
+       xlab = "Interval", ylab = "Number of steps")
+```
+
