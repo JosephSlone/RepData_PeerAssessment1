@@ -1,14 +1,10 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+# Reproducible Research: Peer Assessment 1
 
 
 ## Loading and preprocessing the data
 
-```{r initial_code, warning=FALSE, message=FALSE}
+
+```r
 library(data.table)
 library(dplyr)
 library(ggplot2)
@@ -17,7 +13,6 @@ library(lattice)
 unzip("activity.zip")
 dt <- data.table(read.csv("activity.csv"))
 dt$date <- as.Date(dt$date, "%Y-%m-%d")
-
 ```
 
 
